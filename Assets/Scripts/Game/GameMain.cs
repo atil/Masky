@@ -1,4 +1,8 @@
-﻿using System.Collections;
+﻿// TODO
+// - change scoring to distance
+// - make it work with touch
+ 
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -29,6 +33,8 @@ namespace Game
         [SerializeField] private GameObject _scoreText;
         [SerializeField] private Color _redColor;
         [SerializeField] private Color _whiteColor;
+        [SerializeField] private Transform _inventoryParent;
+        [SerializeField] private GameObject _inventoryItemPrefab;
         [SerializeField] private List<Image> _edgeBarsAll;
         [SerializeField] private Image[] _edgeBarsHorizontal;
         [SerializeField] private Image[] _edgeBarsVertical;
@@ -37,6 +43,7 @@ namespace Game
         float _timer = 0;
 
         int _score = 0;
+        int _shotsRemaining;
 
         const int SpotCount = 5;
         const float SearchDuration = 5.0f;
@@ -63,6 +70,7 @@ namespace Game
                 {
                     foreach (Transform t in _spotsParent) Destroy(t.gameObject);
                     foreach (Transform t in _shotMarksParent) Destroy(t.gameObject);
+                    _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
 
                     List<Vector2> spotPositions = new();
                     Vector2 s = _spotVolume.size / 2;
@@ -89,12 +97,12 @@ namespace Game
                 {
                     _searchText.SetActive(false);
                     Cursor.visible = false;
+                    _edgeBarsAll.ForEach(x => x.gameObject.SetActive(true));
                     _edgeBarsAll.ForEach(x => x.color = _whiteColor);
                     _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
 
                     while (true)
                     {
-                        // TODO UI edge bars
                         Vector3 p = _root.Camera.ScreenToWorldPoint(Input.mousePosition);
                         _theRenderer.material.SetVector("_MousePos", new Vector4(p.x, p.y, 0, 1));
 
@@ -118,7 +126,19 @@ namespace Game
                 }
                 else if (_state == State.Shoot)
                 {
+                    void SetInventory(int itemCount)
+                    {
+                        foreach (Transform item in _inventoryParent) Destroy(item.gameObject);
+                        for (int i = 0; i < itemCount; i++)
+                        {
+                            Instantiate(_inventoryItemPrefab, _inventoryParent);
+                        }
+                    }
                     _shootText.SetActive(true);
+                    _shotsRemaining = SpotCount;
+
+                    _inventoryParent.gameObject.SetActive(true);
+                    SetInventory(_shotsRemaining);
 
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(false));
                     yield return new WaitForSeconds(1.0f);
@@ -130,7 +150,7 @@ namespace Game
                     HashSet<Transform> markedSpots = new();
                     while (true)
                     {
-                        if (Input.GetMouseButtonDown(0))
+                        if (Input.GetMouseButtonDown(0) && _shotsRemaining > 0) // Shoot
                         {
                             Vector3 p = _root.Camera.ScreenToWorldPoint(Input.mousePosition);
                             p.z = 0;
@@ -147,8 +167,8 @@ namespace Game
                                 }
                             }
 
-                            _score = markedSpots.Count;
-
+                            _shotsRemaining--;
+                            SetInventory(_shotsRemaining);
                         }
 
                         float t = Mathf.Lerp(1, 0.01f, _timer / ShootDuration);
@@ -160,6 +180,8 @@ namespace Game
                         {
                             _timer = 0;
                             _state = State.Score;
+                            _score = markedSpots.Count;
+                            _inventoryParent.gameObject.SetActive(false);
                             break;
                         }
 
@@ -174,7 +196,6 @@ namespace Game
                     _theRenderer.enabled = false;
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(false));
                     yield return new WaitForSeconds(2.0f);
-                    _edgeBarsAll.ForEach(x => x.gameObject.SetActive(true));
                     _theRenderer.enabled = true;
                     _scoreText.SetActive(false);
                     _state = State.Countdown;

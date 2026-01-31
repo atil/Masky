@@ -5,6 +5,7 @@ Shader "Unlit/TheShader"
         _MainTex ("Texture", 2D) = "white" {}
         _MousePos ("Mouse Pos", Vector) = (0, 0, 0, 1)
 		_Color("Quad color", Color) = (.25, .5, .5, 1)
+		_ColorEdge("Edge color", Color) = (.25, .5, .5, 1)
 		_HoleRadius ("Hole radius", Float) = 0.5
     }
     SubShader
@@ -39,6 +40,7 @@ Shader "Unlit/TheShader"
             float4 _MainTex_ST;
             float4 _MousePos;
             float4 _Color;
+            float4 _ColorEdge;
             float _HoleRadius;
 
             v2f vert (appdata v)
@@ -56,6 +58,7 @@ Shader "Unlit/TheShader"
 
                 float dist = length(i.worldPos.xy - _MousePos.xy);
                 if (dist < _HoleRadius) col.a = 0;
+                else if (dist < _HoleRadius + 0.03) col = _ColorEdge;
 
                 return col;
             }
