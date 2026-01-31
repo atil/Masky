@@ -1036,7 +1036,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &316700160
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1053,7 +1053,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0.19, y: 0}
   m_SizeDelta: {x: 0.1, y: 0}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!114 &316700161
@@ -1626,7 +1626,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1178777783
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2302,6 +2302,19 @@ MonoBehaviour:
   _searchText: {fileID: 127694978}
   _shootText: {fileID: 37615525}
   _scoreText: {fileID: 1143157157}
+  _redColor: {r: 0.7490196, g: 0.38039216, b: 0.41568628, a: 1}
+  _whiteColor: {r: 0.84705883, g: 0.87058824, b: 0.9137255, a: 1}
+  _edgeBarsAll:
+  - {fileID: 316700161}
+  - {fileID: 1985760224}
+  - {fileID: 456198084}
+  - {fileID: 1178777784}
+  _edgeBarsHorizontal:
+  - {fileID: 456198084}
+  - {fileID: 1178777784}
+  _edgeBarsVertical:
+  - {fileID: 316700161}
+  - {fileID: 1985760224}
 --- !u!1 &1933767015
 GameObject:
   m_ObjectHideFlags: 0
@@ -2387,7 +2400,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1985760223
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2404,7 +2417,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -0.189, y: 0}
   m_SizeDelta: {x: 0.1, y: 0}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!114 &1985760224

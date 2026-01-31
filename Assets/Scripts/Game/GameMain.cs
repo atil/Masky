@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Game
 {
@@ -26,6 +27,11 @@ namespace Game
         [SerializeField] private GameObject _searchText;
         [SerializeField] private GameObject _shootText;
         [SerializeField] private GameObject _scoreText;
+        [SerializeField] private Color _redColor;
+        [SerializeField] private Color _whiteColor;
+        [SerializeField] private List<Image> _edgeBarsAll;
+        [SerializeField] private Image[] _edgeBarsHorizontal;
+        [SerializeField] private Image[] _edgeBarsVertical;
 
         State _state;
         float _timer = 0;
@@ -83,6 +89,8 @@ namespace Game
                 {
                     _searchText.SetActive(false);
                     Cursor.visible = false;
+                    _edgeBarsAll.ForEach(x => x.color = _whiteColor);
+                    _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
 
                     while (true)
                     {
@@ -91,6 +99,11 @@ namespace Game
                         _theRenderer.material.SetVector("_MousePos", new Vector4(p.x, p.y, 0, 1));
 
                         _timer += Time.deltaTime;
+
+                        float t = Mathf.Lerp(1, 0.01f, _timer / SearchDuration);
+                        foreach (Image img in _edgeBarsHorizontal) img.rectTransform.localScale = new Vector3(t, 1, 1);
+                        foreach (Image img in _edgeBarsVertical) img.rectTransform.localScale = new Vector3(1, t, 1);
+
                         if (_timer > SearchDuration)
                         {
                             _timer = 0;
@@ -106,14 +119,17 @@ namespace Game
                 else if (_state == State.Shoot)
                 {
                     _shootText.SetActive(true);
+
+                    _edgeBarsAll.ForEach(x => x.gameObject.SetActive(false));
                     yield return new WaitForSeconds(1.0f);
+                    _edgeBarsAll.ForEach(x => x.gameObject.SetActive(true));
+                    _edgeBarsAll.ForEach(x => x.color = _redColor);
+                    _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
                     _shootText.SetActive(false);
 
                     HashSet<Transform> markedSpots = new();
                     while (true)
                     {
-                        // TODO UI edge bars
-
                         if (Input.GetMouseButtonDown(0))
                         {
                             Vector3 p = _root.Camera.ScreenToWorldPoint(Input.mousePosition);
@@ -122,18 +138,22 @@ namespace Game
                             GameObject shotMark = Instantiate(_shotMarkPrefab, _shotMarksParent);
                             shotMark.transform.position = p.WithZ(-1f);
 
-                            foreach (Transform t in _spotsParent)
+                            foreach (Transform spotTransform in _spotsParent)
                             {
                                 const float SpotRadius = 0.5f;
-                                if (Vector3.Distance(p, t.position) < SpotRadius)
+                                if (Vector3.Distance(p, spotTransform.position) < SpotRadius)
                                 {
-                                    markedSpots.Add(t);
+                                    markedSpots.Add(spotTransform);
                                 }
                             }
 
                             _score = markedSpots.Count;
 
                         }
+
+                        float t = Mathf.Lerp(1, 0.01f, _timer / ShootDuration);
+                        foreach (Image img in _edgeBarsHorizontal) img.rectTransform.localScale = new Vector3(t, 1, 1);
+                        foreach (Image img in _edgeBarsVertical) img.rectTransform.localScale = new Vector3(1, t, 1);
 
                         _timer += Time.deltaTime;
                         if (_timer > ShootDuration)
@@ -152,7 +172,9 @@ namespace Game
                     _scoreText.SetActive(true);
                     _scoreText.GetComponent<TextMeshProUGUI>().text = $"NICE. YOU HIT {_score}";
                     _theRenderer.enabled = false;
+                    _edgeBarsAll.ForEach(x => x.gameObject.SetActive(false));
                     yield return new WaitForSeconds(2.0f);
+                    _edgeBarsAll.ForEach(x => x.gameObject.SetActive(true));
                     _theRenderer.enabled = true;
                     _scoreText.SetActive(false);
                     _state = State.Countdown;
