@@ -1,9 +1,5 @@
 ﻿// TODO
-// - splash
-// - add "click to continue" to score screen
 // - sfx / music
-// - build
-// - polish: curtain noise
 
 using System.Collections;
 using System.Collections.Generic;
@@ -38,6 +34,7 @@ namespace Game
         [SerializeField] private GameObject _shootText;
         [SerializeField] private GameObject _scoreText;
         [SerializeField] private Color _redColor;
+        [SerializeField] private Color _greenColor;
         [SerializeField] private Color _whiteColor;
         [SerializeField] private Transform _inventoryParent;
         [SerializeField] private GameObject _inventoryItemPrefab;
@@ -56,6 +53,8 @@ namespace Game
         const float ShootDuration = 7.0f;
         const float SpotScale = 1.0f;
         const float HoleRadius = 0.5f;
+
+        List<GameObject> _scoredShotMarks = new();
 
         public void Setup()
         {
@@ -83,15 +82,6 @@ namespace Game
             });
         }
 
-        Vector3 GetPointerPos()
-        {
-#if UNITY_WEBGL
-            return Input.GetTouch(0).position;
-#else
-            return Input.mousePosition;
-#endif
-        }
-
         IEnumerator Tick()
         {
             while (true)
@@ -101,6 +91,7 @@ namespace Game
                     foreach (Transform t in _spotsParent) Destroy(t.gameObject);
                     foreach (Transform t in _shotMarksParent) Destroy(t.gameObject);
                     foreach (Transform t in _shotLinesParent) Destroy(t.gameObject);
+                    _scoredShotMarks.Clear();
                     _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
                     _score = 0;
 
@@ -108,12 +99,11 @@ namespace Game
                     Vector2 s = _spotVolume.size / 2;
                     for (int i = 0; i < SpotCount; i++)
                     {
-                        float x = Random.Range(-s.x, s.x);
-                        float y = Random.Range(-s.y, s.y);
+                        Vector2 randomPos;
+                        do randomPos = new(Random.Range(-s.x, s.x), Random.Range(-s.y, s.y));
+                        while (spotPositions.Exists(spotPos => Vector2.Distance(spotPos, randomPos) < 2 * SpotScale));
 
-                        // TODO prevent overlap
-
-                        spotPositions.Add(new(x, y));
+                        spotPositions.Add(randomPos);
                     }
                     foreach (Vector2 pos in spotPositions)
                     {
@@ -138,7 +128,7 @@ namespace Game
 
                     while (true)
                     {
-                        Vector3 p = _root.Camera.ScreenToWorldPoint(GetPointerPos());
+                        Vector3 p = _root.Camera.ScreenToWorldPoint(Input.mousePosition);
                         _theRenderer.material.SetVector("_MousePos", new Vector4(p.x, p.y, 0, 1));
 
                         _timer += Time.deltaTime;
@@ -186,21 +176,22 @@ namespace Game
                     HashSet<Transform> markedSpots = new();
                     while (true)
                     {
-                        if (Input.anyKeyDown && _shotsRemaining > 0) // Shoot
+                        if (Input.GetMouseButtonDown(0) && _shotsRemaining > 0) // Shoot
                         {
-                            Vector3 p = _root.Camera.ScreenToWorldPoint(GetPointerPos());
+                            Vector3 p = _root.Camera.ScreenToWorldPoint(Input.mousePosition);
                             p.z = 0;
 
-                            GameObject shotMark = Instantiate(_shotMarkPrefab, _shotMarksParent);
-                            shotMark.transform.position = p.WithZ(-1f);
+                            GameObject shotMarkGo = Instantiate(_shotMarkPrefab, _shotMarksParent);
+                            shotMarkGo.transform.position = p.WithZ(-1f);
 
                             foreach (Transform spotTransform in _spotsParent)
                             {
                                 const float SpotRadius = 0.5f;
                                 float dist = Vector3.Distance(p, spotTransform.position);
-                                if (dist < SpotRadius) // Hit
+                                if (dist < SpotRadius && !markedSpots.Contains(spotTransform)) // Hit
                                 {
-                                    markedSpots.Add(spotTransform);
+                                    _scoredShotMarks.Add(shotMarkGo);
+                                    markedSpots.Add(spotTransform); // Only the first hit counts for each spot
                                     LineRenderer line = Instantiate(_shotLinePrefab, _shotLinesParent).GetComponent<LineRenderer>();
                                     const float FeelGoodCoeff = 10f;
                                     _score += (1.0f / dist) * FeelGoodCoeff;
@@ -231,12 +222,17 @@ namespace Game
                 }
                 else if (_state == State.Score)
                 {
+                    _scoredShotMarks.ForEach(x => x.GetComponent<SpriteRenderer>().color = _greenColor);
                     _scoreText.SetActive(true);
-                    string scoreString = $"SCORE: {_score:F2}";
+                    string scoreString = $"SCORE: {_score:F1}";
                     _scoreText.GetComponent<TextMeshProUGUI>().text = scoreString;
                     _theRenderer.enabled = false;
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(false));
-                    yield return new WaitForSeconds(2.0f);
+                    while (true)
+                    {
+                        if (Input.anyKeyDown) break;
+                        yield return null;
+                    }
                     _theRenderer.enabled = true;
                     _scoreText.SetActive(false);
                     _state = State.Countdown;
