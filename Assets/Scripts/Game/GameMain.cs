@@ -1,6 +1,7 @@
 ﻿// TODO
-// - make it work with touch
 // - splash
+// - add "click to continue" to score screen
+// - sfx / music
 // - build
 // - polish: curtain noise
 
@@ -51,18 +52,18 @@ namespace Game
         int _shotsRemaining;
 
         const int SpotCount = 5;
-        const float SearchDuration = 1.0f;
-        const float ShootDuration = 5.0f;
+        const float SearchDuration = 10.0f;
+        const float ShootDuration = 7.0f;
         const float SpotScale = 1.0f;
         const float HoleRadius = 0.5f;
 
         public void Setup()
         {
-            Cursor.visible = false;
         }
 
         public void ResetGame()
         {
+            Cursor.visible = false;
             _state = State.Countdown;
             _theRenderer.material.SetVector("_MousePos", new Vector4(99, 99, 0, 1));
             _theRenderer.material.SetFloat("_HoleRadius", HoleRadius);
@@ -80,6 +81,15 @@ namespace Game
                 new TweenDelay(stayDuration),
                 new TweenMove(textGo.transform, new (TextOffset, 0, 0), 0.3f, AnimationCurve.EaseInOut(0, 0, 1, 1)),
             });
+        }
+
+        Vector3 GetPointerPos()
+        {
+#if UNITY_WEBGL
+            return Input.GetTouch(0).position;
+#else
+            return Input.mousePosition;
+#endif
         }
 
         IEnumerator Tick()
@@ -128,7 +138,7 @@ namespace Game
 
                     while (true)
                     {
-                        Vector3 p = _root.Camera.ScreenToWorldPoint(Input.mousePosition);
+                        Vector3 p = _root.Camera.ScreenToWorldPoint(GetPointerPos());
                         _theRenderer.material.SetVector("_MousePos", new Vector4(p.x, p.y, 0, 1));
 
                         _timer += Time.deltaTime;
@@ -176,9 +186,9 @@ namespace Game
                     HashSet<Transform> markedSpots = new();
                     while (true)
                     {
-                        if (Input.GetMouseButtonDown(0) && _shotsRemaining > 0) // Shoot
+                        if (Input.anyKeyDown && _shotsRemaining > 0) // Shoot
                         {
-                            Vector3 p = _root.Camera.ScreenToWorldPoint(Input.mousePosition);
+                            Vector3 p = _root.Camera.ScreenToWorldPoint(GetPointerPos());
                             p.z = 0;
 
                             GameObject shotMark = Instantiate(_shotMarkPrefab, _shotMarksParent);
