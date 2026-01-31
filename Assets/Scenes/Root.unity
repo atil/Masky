@@ -2205,7 +2205,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1539643424
 Transform:
   m_ObjectHideFlags: 0
@@ -2434,6 +2434,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _root: {fileID: 283082028}
+  _jamkit: {fileID: 1042202867}
   _theRenderer: {fileID: 1539643425}
   _spotVolume: {fileID: 141373559}
   _spotPrefab: {fileID: 2313234017269175314, guid: 5d89e38c4d2e3fd42bdee652225e63e6, type: 3}

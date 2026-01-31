@@ -1,6 +1,9 @@
 ﻿// TODO
 // - make it work with touch
- 
+// - splash
+// - build
+// - polish: curtain noise
+
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -21,6 +24,7 @@ namespace Game
     public class GameMain : MonoBehaviour
     {
         [SerializeField] private Root _root;
+        [SerializeField] private JamKit _jamkit;
         [SerializeField] private MeshRenderer _theRenderer;
         [SerializeField] private BoxCollider2D _spotVolume;
         [SerializeField] private GameObject _spotPrefab;
@@ -43,12 +47,14 @@ namespace Game
         State _state;
         float _timer = 0;
 
-        float _totalDist = 0;
+        float _score = 0;
         int _shotsRemaining;
 
         const int SpotCount = 5;
-        const float SearchDuration = 8.0f;
+        const float SearchDuration = 1.0f;
         const float ShootDuration = 5.0f;
+        const float SpotScale = 1.0f;
+        const float HoleRadius = 0.5f;
 
         public void Setup()
         {
@@ -59,8 +65,21 @@ namespace Game
         {
             _state = State.Countdown;
             _theRenderer.material.SetVector("_MousePos", new Vector4(99, 99, 0, 1));
+            _theRenderer.material.SetFloat("_HoleRadius", HoleRadius);
 
             StartCoroutine(Tick());
+        }
+
+        void PlayTextAnim(GameObject textGo, float stayDuration)
+        {
+            const float TextOffset = 10;
+            textGo.transform.position = textGo.transform.position.WithX(-TextOffset);
+            _jamkit.TweenSeq(new TweenBase[]
+            {
+                new TweenMove(textGo.transform, Vector3.zero, 0.3f, AnimationCurve.EaseInOut(0, 0, 1, 1)),
+                new TweenDelay(stayDuration),
+                new TweenMove(textGo.transform, new (TextOffset, 0, 0), 0.3f, AnimationCurve.EaseInOut(0, 0, 1, 1)),
+            });
         }
 
         IEnumerator Tick()
@@ -73,6 +92,7 @@ namespace Game
                     foreach (Transform t in _shotMarksParent) Destroy(t.gameObject);
                     foreach (Transform t in _shotLinesParent) Destroy(t.gameObject);
                     _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
+                    _score = 0;
 
                     List<Vector2> spotPositions = new();
                     Vector2 s = _spotVolume.size / 2;
@@ -89,15 +109,18 @@ namespace Game
                     {
                         GameObject spotGo = Instantiate(_spotPrefab, _spotsParent);
                         spotGo.transform.position = pos;
+                        spotGo.transform.localScale *= SpotScale;
                     }
 
+                    PlayTextAnim(_searchText, 0.5f);
                     _searchText.SetActive(true);
                     yield return new WaitForSeconds(1.0f);
+                    _searchText.SetActive(false);
+
                     _state = State.Search;
                 }
                 else if (_state == State.Search)
                 {
-                    _searchText.SetActive(false);
                     Cursor.visible = false;
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(true));
                     _edgeBarsAll.ForEach(x => x.color = _whiteColor);
@@ -142,6 +165,7 @@ namespace Game
                     _inventoryParent.gameObject.SetActive(true);
                     SetInventory(_shotsRemaining);
 
+                    PlayTextAnim(_shootText, 0.5f);
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(false));
                     yield return new WaitForSeconds(1.0f);
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(true));
@@ -163,17 +187,14 @@ namespace Game
                             foreach (Transform spotTransform in _spotsParent)
                             {
                                 const float SpotRadius = 0.5f;
-                                if (Vector3.Distance(p, spotTransform.position) < SpotRadius) // Hit
+                                float dist = Vector3.Distance(p, spotTransform.position);
+                                if (dist < SpotRadius) // Hit
                                 {
                                     markedSpots.Add(spotTransform);
                                     LineRenderer line = Instantiate(_shotLinePrefab, _shotLinesParent).GetComponent<LineRenderer>();
-                                    _totalDist += Vector3.Distance(p, spotTransform.position);
+                                    const float FeelGoodCoeff = 10f;
+                                    _score += (1.0f / dist) * FeelGoodCoeff;
                                     line.SetPositions(new Vector3[] { p, spotTransform.position });
-                                }
-                                else // Miss
-                                {
-                                    const float MissedShotScorePenalty = 10.0f;
-                                    _totalDist += MissedShotScorePenalty;
                                 }
                             }
 
@@ -191,10 +212,6 @@ namespace Game
                             _timer = 0;
                             _state = State.Score;
                             _inventoryParent.gameObject.SetActive(false);
-
-                            const float NotTakenShotPenalty = 10;
-                            _totalDist += _shotsRemaining * NotTakenShotPenalty;
-
                             break;
                         }
 
@@ -205,9 +222,7 @@ namespace Game
                 else if (_state == State.Score)
                 {
                     _scoreText.SetActive(true);
-                    const float FeelGoodCoeff = 1000f;
-                    float score = (1.0f / _totalDist) * FeelGoodCoeff;
-                    string scoreString = $"SCORE: {score:F2}";
+                    string scoreString = $"SCORE: {_score:F2}";
                     _scoreText.GetComponent<TextMeshProUGUI>().text = scoreString;
                     _theRenderer.enabled = false;
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(false));
