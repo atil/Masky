@@ -1,5 +1,4 @@
 ﻿// TODO
-// - change scoring to distance
 // - make it work with touch
  
 using System.Collections;
@@ -28,6 +27,8 @@ namespace Game
         [SerializeField] private GameObject _shotMarkPrefab;
         [SerializeField] private Transform _spotsParent;
         [SerializeField] private Transform _shotMarksParent;
+        [SerializeField] private GameObject _shotLinePrefab;
+        [SerializeField] private Transform _shotLinesParent;
         [SerializeField] private GameObject _searchText;
         [SerializeField] private GameObject _shootText;
         [SerializeField] private GameObject _scoreText;
@@ -42,11 +43,11 @@ namespace Game
         State _state;
         float _timer = 0;
 
-        int _score = 0;
+        float _totalDist = 0;
         int _shotsRemaining;
 
         const int SpotCount = 5;
-        const float SearchDuration = 5.0f;
+        const float SearchDuration = 8.0f;
         const float ShootDuration = 5.0f;
 
         public void Setup()
@@ -70,6 +71,7 @@ namespace Game
                 {
                     foreach (Transform t in _spotsParent) Destroy(t.gameObject);
                     foreach (Transform t in _shotMarksParent) Destroy(t.gameObject);
+                    foreach (Transform t in _shotLinesParent) Destroy(t.gameObject);
                     _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
 
                     List<Vector2> spotPositions = new();
@@ -161,9 +163,17 @@ namespace Game
                             foreach (Transform spotTransform in _spotsParent)
                             {
                                 const float SpotRadius = 0.5f;
-                                if (Vector3.Distance(p, spotTransform.position) < SpotRadius)
+                                if (Vector3.Distance(p, spotTransform.position) < SpotRadius) // Hit
                                 {
                                     markedSpots.Add(spotTransform);
+                                    LineRenderer line = Instantiate(_shotLinePrefab, _shotLinesParent).GetComponent<LineRenderer>();
+                                    _totalDist += Vector3.Distance(p, spotTransform.position);
+                                    line.SetPositions(new Vector3[] { p, spotTransform.position });
+                                }
+                                else // Miss
+                                {
+                                    const float MissedShotScorePenalty = 10.0f;
+                                    _totalDist += MissedShotScorePenalty;
                                 }
                             }
 
@@ -180,8 +190,11 @@ namespace Game
                         {
                             _timer = 0;
                             _state = State.Score;
-                            _score = markedSpots.Count;
                             _inventoryParent.gameObject.SetActive(false);
+
+                            const float NotTakenShotPenalty = 10;
+                            _totalDist += _shotsRemaining * NotTakenShotPenalty;
+
                             break;
                         }
 
@@ -192,7 +205,10 @@ namespace Game
                 else if (_state == State.Score)
                 {
                     _scoreText.SetActive(true);
-                    _scoreText.GetComponent<TextMeshProUGUI>().text = $"NICE. YOU HIT {_score}";
+                    const float FeelGoodCoeff = 1000f;
+                    float score = (1.0f / _totalDist) * FeelGoodCoeff;
+                    string scoreString = $"SCORE: {score:F2}";
+                    _scoreText.GetComponent<TextMeshProUGUI>().text = scoreString;
                     _theRenderer.enabled = false;
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(false));
                     yield return new WaitForSeconds(2.0f);

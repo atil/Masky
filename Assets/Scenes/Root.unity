@@ -1411,6 +1411,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 775609997}
   m_CullTransparentMesh: 1
+--- !u!1 &800367537
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 800367538}
+  m_Layer: 0
+  m_Name: ShotLinesParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &800367538
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800367537}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1916531313}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1018750418
 GameObject:
   m_ObjectHideFlags: 0
@@ -2184,7 +2215,7 @@ Transform:
   m_GameObject: {fileID: 1539643423}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -0.1}
   m_LocalScale: {x: 6, y: 10, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2387,6 +2418,7 @@ Transform:
   - {fileID: 141373557}
   - {fileID: 2044388227}
   - {fileID: 1675009646}
+  - {fileID: 800367538}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1916531314
@@ -2408,6 +2440,8 @@ MonoBehaviour:
   _shotMarkPrefab: {fileID: 5928555393658191263, guid: 49070faaa961c904cac2094883a1f7ef, type: 3}
   _spotsParent: {fileID: 2044388227}
   _shotMarksParent: {fileID: 1675009646}
+  _shotLinePrefab: {fileID: 5026584759934063180, guid: 430ae498b00bcac4297c18cfb93b3720, type: 3}
+  _shotLinesParent: {fileID: 800367538}
   _searchText: {fileID: 127694978}
   _shootText: {fileID: 37615525}
   _scoreText: {fileID: 1143157157}
