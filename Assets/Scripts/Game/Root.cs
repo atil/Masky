@@ -40,12 +40,12 @@ namespace Game
 
         public void OnSplashClickedPlay()
         {
+            _jamKit.PlaySfx("Click");
             _jamKit.TweenSeq(new TweenBase[]
             {
                 new TweenImageColor(_coverImage, _jamKit.Globals.SceneTransitionParams.Color, _jamKit.Globals.SceneTransitionParams.Duration),
                 new TweenCallback(InitGame),
                 new TweenImageColor(_coverImage, Color.clear, _jamKit.Globals.SceneTransitionParams.Duration)
-
             });
         }
 

@@ -1,5 +1,7 @@
 ﻿// TODO
 // - sfx / music
+// - maybe: prevent focusing on one spot?
+// - make a
 
 using System.Collections;
 using System.Collections.Generic;
@@ -121,6 +123,7 @@ namespace Game
                 }
                 else if (_state == State.Search)
                 {
+                    _jamkit.PlaySfx("PingLow");
                     Cursor.visible = false;
                     _edgeBarsAll.ForEach(x => x.gameObject.SetActive(true));
                     _edgeBarsAll.ForEach(x => x.color = _whiteColor);
@@ -151,6 +154,7 @@ namespace Game
                 }
                 else if (_state == State.Shoot)
                 {
+                    _jamkit.PlaySfx("PingHigh");
                     void SetInventory(int itemCount)
                     {
                         foreach (Transform item in _inventoryParent) Destroy(item.gameObject);
@@ -178,6 +182,7 @@ namespace Game
                     {
                         if (Input.GetMouseButtonDown(0) && _shotsRemaining > 0) // Shoot
                         {
+                            _jamkit.PlaySfx("Shoot");
                             Vector3 p = _root.Camera.ScreenToWorldPoint(Input.mousePosition);
                             p.z = 0;
 
@@ -193,8 +198,10 @@ namespace Game
                                     _scoredShotMarks.Add(shotMarkGo);
                                     markedSpots.Add(spotTransform); // Only the first hit counts for each spot
                                     LineRenderer line = Instantiate(_shotLinePrefab, _shotLinesParent).GetComponent<LineRenderer>();
+
                                     const float FeelGoodCoeff = 10f;
                                     _score += (1.0f / dist) * FeelGoodCoeff;
+
                                     line.SetPositions(new Vector3[] { p, spotTransform.position });
                                 }
                             }
@@ -222,6 +229,7 @@ namespace Game
                 }
                 else if (_state == State.Score)
                 {
+                    _jamkit.PlaySfx("Score");
                     _scoredShotMarks.ForEach(x => x.GetComponent<SpriteRenderer>().color = _greenColor);
                     _scoreText.SetActive(true);
                     string scoreString = $"SCORE: {_score:F1}";
