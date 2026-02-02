@@ -56,8 +56,6 @@ namespace Game
         const float SpotScale = 1.0f;
         const float HoleRadius = 0.5f;
 
-        List<GameObject> _scoredShotMarks = new();
-
         public void Setup()
         {
         }
@@ -93,7 +91,6 @@ namespace Game
                     foreach (Transform t in _spotsParent) Destroy(t.gameObject);
                     foreach (Transform t in _shotMarksParent) Destroy(t.gameObject);
                     foreach (Transform t in _shotLinesParent) Destroy(t.gameObject);
-                    _scoredShotMarks.Clear();
                     _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
                     _score = 0;
 
@@ -177,7 +174,7 @@ namespace Game
                     _edgeBarsAll.ForEach(x => x.rectTransform.localScale = Vector3.one);
                     _shootText.SetActive(false);
 
-                    HashSet<Transform> markedSpots = new();
+                    List<Vector2> shots = new();
                     while (true)
                     {
                         if (Input.GetMouseButtonDown(0) && _shotsRemaining > 0) // Shoot
@@ -188,24 +185,7 @@ namespace Game
 
                             GameObject shotMarkGo = Instantiate(_shotMarkPrefab, _shotMarksParent);
                             shotMarkGo.transform.position = p.WithZ(-1f);
-
-                            foreach (Transform spotTransform in _spotsParent)
-                            {
-                                const float SpotRadius = 0.5f;
-                                float dist = Vector3.Distance(p, spotTransform.position);
-                                if (dist < SpotRadius && !markedSpots.Contains(spotTransform)) // Hit
-                                {
-                                    _scoredShotMarks.Add(shotMarkGo);
-                                    markedSpots.Add(spotTransform); // Only the first hit counts for each spot
-                                    LineRenderer line = Instantiate(_shotLinePrefab, _shotLinesParent).GetComponent<LineRenderer>();
-
-                                    const float FeelGoodCoeff = 10f;
-                                    _score += (1.0f / dist) * FeelGoodCoeff;
-
-                                    line.SetPositions(new Vector3[] { p, spotTransform.position });
-                                }
-                            }
-
+                            shots.Add(p);
                             _shotsRemaining--;
                             SetInventory(_shotsRemaining);
                         }
@@ -217,6 +197,13 @@ namespace Game
                         _timer += Time.deltaTime;
                         if (_timer > ShootDuration)
                         {
+                            _score = CalculateScore(_spotsParent, shots, out var highestScores);
+                            foreach ((Vector2 shot, Transform spot) in highestScores)
+                            {
+                                LineRenderer line = Instantiate(_shotLinePrefab, _shotLinesParent).GetComponent<LineRenderer>();
+                                line.SetPositions(new Vector3[] { shot, spot.position });
+                            }
+
                             _timer = 0;
                             _state = State.Score;
                             _inventoryParent.gameObject.SetActive(false);
@@ -230,7 +217,6 @@ namespace Game
                 else if (_state == State.Score)
                 {
                     _jamkit.PlaySfx("Score");
-                    _scoredShotMarks.ForEach(x => x.GetComponent<SpriteRenderer>().color = _greenColor);
                     _scoreText.SetActive(true);
                     string scoreString = $"SCORE: {_score:F1}";
                     _scoreText.GetComponent<TextMeshProUGUI>().text = scoreString;
@@ -248,6 +234,44 @@ namespace Game
 
                 yield return null;
             }
+        }
+
+        private float CalculateScore(Transform spotsParent, List<Vector2> shots, out List<(Vector2, Transform)> highestScores)
+        {
+            List<(Vector2, Transform, float)> shotSpotPairs = new();
+
+            foreach (Vector2 shot in shots)
+            {
+                foreach (Transform spot in spotsParent)
+                {
+                    shotSpotPairs.Add((shot, spot, Vector3.Distance(shot, spot.position)));
+                }
+            }
+
+            shotSpotPairs.Sort((x, y) => x.Item3.CompareTo(y.Item3));
+
+            highestScores = new();
+            float totalScore = 0;
+
+            foreach ((Vector2 shot, Transform spot, float dist) in shotSpotPairs)
+            {
+                if (highestScores.Exists(pair => pair.Item1 == shot || pair.Item2 == spot))
+                {
+                    continue;
+                }
+
+                highestScores.Add((shot, spot));
+
+                float score = (1.0f / dist);
+                score = Mathf.Max(score, 0.1f);
+
+                const float FeelGoodCoeff = 10.0f;
+                score *= FeelGoodCoeff;
+
+                totalScore += score;
+            }
+
+            return totalScore;
         }
     }
 }
